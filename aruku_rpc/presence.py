@@ -204,6 +204,7 @@ class PresenceService:
             self._set_status("Не в эфире")
             return
 
+        cfg = self.config.snapshot()  # свежий снимок: название/тип уже записаны start_session
         activity = self._build_activity(cfg, started)
         activity_json = json.dumps(activity, sort_keys=True, ensure_ascii=False)
         now = time.monotonic()
@@ -230,9 +231,10 @@ class PresenceService:
                 and self._client_id == client_id
             ):
                 return
-            self._disconnect()
-            ipc = DiscordIPC(client_id, self.log)
-            ipc.connect()
+        self._disconnect()
+        ipc = DiscordIPC(client_id, self.log)
+        ipc.connect()  # блокирующий I/O — без self._lock
+        with self._lock:
             self._ipc = ipc
             self._client_id = client_id
             self._connected = True
@@ -302,14 +304,15 @@ class PresenceService:
                         source="auto",
                     )
             except DiscordIPCError as exc:
-                if exc.code in (4006, 4007):
+                if exc.code is not None:
+                    # Discord ответил ошибкой (обычно 4006: нет OAuth) — соединение живое.
                     auto_error = (
-                        "Discord не отдал текущий войс без OAuth. "
-                        "Включи ручной войс в настройках или укажи канал вручную."
+                        "Авто-войс недоступен: Discord требует OAuth-авторизацию для "
+                        "этой команды. Укажи Guild ID и ID канала вручную в настройках."
                     )
                     self.log.warning("Auto voice unavailable: %s", exc)
                 else:
-                    raise
+                    raise  # соединение потеряно — пусть цикл переподключится
 
         if voice is None and (manual_id or manual_name):
             voice = VoiceInfo(

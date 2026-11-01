@@ -8,7 +8,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from .config import Config
-from .discord_ipc import DiscordIPC
+from .discord_ipc import DiscordIPC, DiscordIPCError
 from .paths import app_data_dir, user_asset_path
 from .startup import is_autostart_enabled, set_autostart
 from .theme import (
@@ -480,8 +480,11 @@ class SettingsWindow(tk.Toplevel):
                 parent=self,
             )
 
+        typed_title = self.ui.title_var.get()
         self.service.reload()
         self.ui._load_from_config()
+        if not self.service.snapshot().get("active"):
+            self.ui.title_var.set(typed_title)
         if self.ui.tray is not None:
             try:
                 self.ui.tray.reload_icon()
@@ -511,18 +514,27 @@ class SettingsWindow(tk.Toplevel):
             try:
                 ipc = DiscordIPC(client_id)
                 ipc.connect()
-                data = ipc.get_selected_voice_channel()
                 user = (ipc.user or {}).get("username") or "пользователь"
-                if data:
+                try:
+                    data = ipc.get_selected_voice_channel()
+                    if data:
+                        message = (
+                            f"Подключено как {user}.\n"
+                            f"Текущий войс: {data.get('name')} "
+                            f"(guild {data.get('guild_id') or '—'})"
+                        )
+                    else:
+                        message = (
+                            f"Подключено как {user}.\n"
+                            "Discord не вернул текущий войс — сработает ручной резерв."
+                        )
+                except DiscordIPCError as exc:
+                    if exc.code is None:
+                        raise
                     message = (
-                        f"Подключено как {user}.\n"
-                        f"Текущий войс: {data.get('name')} "
-                        f"(guild {data.get('guild_id') or '—'})"
-                    )
-                else:
-                    message = (
-                        f"Подключено как {user}.\n"
-                        "Discord не вернул текущий войс — сработает ручной резерв."
+                        f"Подключено как {user} — RPC работает.\n"
+                        f"Авто-войс недоступен ({exc}).\n"
+                        "Укажи Guild ID и ID войс-канала вручную."
                     )
             except Exception as exc:
                 message = f"Не удалось подключиться:\n{exc}"
