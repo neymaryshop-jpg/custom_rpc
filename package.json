@@ -1,0 +1,25 @@
+{
+  "name": "taro-rpc",
+  "productName": "Taro RPC",
+  "version": "1.0.0",
+  "description": "Tray Rich Presence for the aruku community: animated activity GIF, auto voice detection and stream timer.",
+  "main": "src/main/main.js",
+  "author": "Taro",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "check": "node scripts/check.js",
+    "assets": "node scripts/make-assets.js",
+    "pack:win": "electron-packager . \"Taro RPC\" --platform=win32 --arch=x64 --out=dist --overwrite --icon=assets/icon.ico --prune=true --ignore=\"^/(dist|test|scripts|\\\\.git)\""
+  },
+  "dependencies": {
+    "@xhayper/discord-rpc": "^1.5.1",
+    "discord.js": "^14.28.0"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^45.2.1"
+  }
+}

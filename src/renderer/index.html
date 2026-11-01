@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' file: data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'none'; font-src 'self';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Taro RPC</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img class="brand-icon" src="../../assets/icon.png" alt="" />
+          <div class="brand-text">
+            <div class="brand-name">Taro RPC</div>
+            <div class="brand-sub">aruku edition</div>
+          </div>
+        </div>
+
+        <nav class="tabs" id="tabs" aria-label="Разделы">
+          <button class="tab active" data-tab="main">Главное</button>
+          <button class="tab" data-tab="presets">Пресеты</button>
+          <button class="tab" data-tab="advanced">Дополнительно</button>
+          <button class="tab" data-tab="help">Настройка</button>
+        </nav>
+
+        <div class="top-actions">
+          <span class="pill" id="rpcPill" title="Discord RPC">Discord: —</span>
+          <span class="pill" id="botPill" title="Бот для авто-войса">Бот: —</span>
+          <button class="icon-btn" id="hideBtn" title="Свернуть в трей">—</button>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <main class="content">
+          <section class="tab-panel" data-panel="main">
+            <div class="setup-banner" id="setupBanner" hidden>
+              <div class="setup-banner-icon">✦</div>
+              <div>
+                <strong>Осталось подключить Discord</strong>
+                <p>
+                  Создай приложение, вставь Application ID и токен бота — и RPC оживёт.
+                  Пошаговая инструкция есть во вкладке «Настройка».
+                </p>
+              </div>
+              <div class="setup-banner-actions">
+                <button class="btn primary" id="setupOpenBtn">Открыть инструкцию</button>
+                <button class="btn" id="setupPortalBtn">Developer Portal</button>
+              </div>
+            </div>
+
+            <div class="hero card" id="heroCard">
+              <div class="hero-main">
+                <div class="eyebrow">Сейчас в эфире</div>
+                <h1 id="heroTitle">Настрой свой статус</h1>
+                <p id="heroSubtitle">Выбери, что показываешь, и нажми «Начать стрим».</p>
+                <div class="hero-chips">
+                  <span class="chip" id="voiceChip">Войс: —</span>
+                  <span class="chip" id="timerChip">Таймер: —</span>
+                  <span class="chip" id="platformChip">Площадка: —</span>
+                </div>
+              </div>
+              <div class="hero-actions">
+                <button class="btn primary" id="quickStartBtn">▶ Начать стрим</button>
+                <button class="btn" id="quickStopBtn">⏹ Остановить</button>
+                <button class="btn ghost" id="quickRefreshBtn">Обновить</button>
+              </div>
+            </div>
+
+            <div class="card" id="discordCard">
+              <div class="card-head">
+                <div>
+                  <h2>Discord</h2>
+                  <p class="muted">
+                    Одно приложение можно использовать и для RPC, и для бота. Тогда название
+                    активности и бот будут называться одинаково.
+                  </p>
+                </div>
+                <span class="status-dot" id="discordDot"></span>
+              </div>
+
+              <div class="grid two">
+                <label class="field">
+                  <span>Application ID <span class="req">*</span></span>
+                  <input
+                    id="appId"
+                    data-field="discord.applicationId"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    placeholder="123456789012345678"
+                  />
+                  <small>Developer Portal → твоё приложение → General Information.</small>
+                </label>
+
+                <label class="field">
+                  <span>Токен бота</span>
+                  <div class="input-row">
+                    <input
+                      id="botToken"
+                      data-field="discord.botToken"
+                      type="password"
+                      autocomplete="off"
+                      spellcheck="false"
+                      placeholder="Вставь токен из раздела Bot"
+                    />
+                    <button class="btn tiny" id="tokenToggle" type="button">Показать</button>
+                  </div>
+                  <small>Нужен только для авто-войса. Хранится зашифрованным на Windows.</small>
+                </label>
+              </div>
+
+              <div class="inline-actions">
+                <button class="btn" id="openPortalBtn">Открыть Developer Portal</button>
+                <button class="btn" id="inviteBotBtn">Пригласить бота</button>
+                <button class="btn ghost" id="copyInviteBtn">Скопировать ссылку</button>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="grid two">
+                <label class="field">
+                  <span>Сервер для авто-войса</span>
+                  <select id="guildSelect">
+                    <option value="__manual__">Ввести ID вручную</option>
+                  </select>
+                  <input
+                    id="guildId"
+                    data-field="discord.guildId"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    placeholder="ID сервера aruku"
+                  />
+                  <small>Правый клик по серверу → «Копировать ID сервера» (нужен режим разработчика).</small>
+                </label>
+
+                <label class="field">
+                  <span>Твой Discord User ID</span>
+                  <div class="input-row">
+                    <input
+                      id="userId"
+                      data-field="discord.userId"
+                      inputmode="numeric"
+                      autocomplete="off"
+                      placeholder="Определится автоматически"
+                    />
+                    <button class="btn tiny" id="useRpcUserBtn" type="button">Взять из RPC</button>
+                  </div>
+                  <small>Кого отслеживать в голосовых каналах. RPC обычно подставляет ID сам.</small>
+                </label>
+              </div>
+
+              <div class="inline-actions">
+                <button class="btn" id="reconnectRpcBtn">Переподключить RPC</button>
+                <button class="btn" id="reconnectBotBtn">Переподключить бота</button>
+                <label class="switch">
+                  <input id="autoVoice" data-field="discord.autoVoice" type="checkbox" />
+                  <span>Авто-детект войса</span>
+                </label>
+              </div>
+
+              <div id="identityWarnings" class="notice-list"></div>
+            </div>
+
+            <div class="card" id="activityCard">
+              <div class="card-head">
+                <div>
+                  <h2>Что я показываю</h2>
+                  <p class="muted">
+                    Аниме, игра или своя тема. Название уходит в строку активности, а GIF —
+                    в большую иконку.
+                  </p>
+                </div>
+                <span class="badge soft" id="activityBadge">—</span>
+              </div>
+
+              <div class="field">
+                <span>Категория</span>
+                <div class="segmented" id="categorySegmented">
+                  <button type="button" data-category="anime">Аниме</button>
+                  <button type="button" data-category="game">Игры</button>
+                  <button type="button" data-category="other">Другое</button>
+                </div>
+              </div>
+
+              <div class="grid two">
+                <label class="field">
+                  <span>Пресет</span>
+                  <select id="presetSelect"></select>
+                  <small>Выбор из списка. «Своё» — ввести название вручную.</small>
+                </label>
+
+                <label class="field">
+                  <span>Название</span>
+                  <div class="input-row">
+                    <input
+                      id="activityTitle"
+                      data-field="activity.title"
+                      maxlength="128"
+                      autocomplete="off"
+                      placeholder="Frieren"
+                    />
+                    <button class="btn tiny" id="saveAsPresetBtn" type="button">В пресет</button>
+                  </div>
+                  <small id="activityCounter">0 / 128</small>
+                </label>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="grid two">
+                <label class="field">
+                  <span>Площадка <code>{P}</code></span>
+                  <select id="platformSelect"></select>
+                  <small>Подставляется в шаблоны как <code>{P}</code>.</small>
+                </label>
+
+                <label class="field">
+                  <span>Ссылка на стрим / профиль</span>
+                  <input
+                    id="platformUrl"
+                    data-field="platforms"
+                    type="url"
+                    autocomplete="off"
+                    placeholder="https://twitch.tv/..."
+                  />
+                  <small>Станет кнопкой «📺 Площадка» и кликабельным details.</small>
+                </label>
+              </div>
+
+              <label class="field" id="customPlatformField" hidden>
+                <span>Название своей площадки</span>
+                <input id="customPlatformName" autocomplete="off" placeholder="Например, VK Play" />
+              </label>
+
+              <div class="divider"></div>
+
+              <div class="field">
+                <span>Анимированная GIF-иконка</span>
+                <div class="input-row">
+                  <input
+                    id="gifUrl"
+                    data-field="activity.gifUrl"
+                    type="url"
+                    autocomplete="off"
+                    placeholder="https://files.catbox.moe/xxxxxx.gif"
+                  />
+                  <button class="btn tiny" id="testGifBtn" type="button">Проверить</button>
+                </div>
+                <div class="inline-actions compact">
+                  <button class="btn tiny" id="pickGifBtn" type="button">Выбрать файл</button>
+                  <button class="btn tiny" id="uploadGifBtn" type="button">Загрузить на catbox</button>
+                  <button class="btn tiny ghost" id="sampleGifBtn" type="button">Пример анимации</button>
+                  <span class="file-name" id="pickedGifName"></span>
+                </div>
+                <small>
+                  Discord не берёт GIF из локального файла. Нужен публичный https-URL;
+                  кнопка загрузки отправит файл на catbox.moe. Рекомендуется 1024×1024.
+                </small>
+                <div id="gifCheckResult" class="check-result" hidden></div>
+              </div>
+
+              <div class="inline-actions">
+                <button class="btn primary" id="applyActivityBtn">Применить активность</button>
+                <button class="btn ghost" id="openCurrentGifBtn">Открыть GIF</button>
+              </div>
+            </div>
+
+            <div class="card" id="voiceCard">
+              <div class="card-head">
+                <div>
+                  <h2>Войс</h2>
+                  <p class="muted">
+                    Бот читает твой голосовой канал и обновляет строку места. Ссылка становится
+                    кнопкой и кликабельным state.
+                  </p>
+                </div>
+                <span class="badge soft" id="voiceBadge">—</span>
+              </div>
+
+              <div class="status-box" id="voiceStatusBox">
+                <div>
+                  <div class="status-label">Сейчас</div>
+                  <div class="status-value" id="voiceStatusValue">—</div>
+                </div>
+                <button class="btn tiny" id="refreshVoiceBtn" type="button">Обновить</button>
+              </div>
+
+              <div class="grid two">
+                <label class="field">
+                  <span>Сервер (вручную)</span>
+                  <input id="voiceServer" data-field="voice.serverName" autocomplete="off" placeholder="aruku" />
+                  <small>Используется, если авто-детект недоступен.</small>
+                </label>
+
+                <label class="field">
+                  <span>Войс (вручную)</span>
+                  <input id="voiceChannel" data-field="voice.channelName" autocomplete="off" placeholder="Voice" />
+                  <small>Например, «General» или «Аниме-войс».</small>
+                </label>
+              </div>
+
+              <label class="field">
+                <span>Ссылка на голосовой канал</span>
+                <input
+                  id="voiceUrl"
+                  data-field="voice.channelUrl"
+                  type="url"
+                  autocomplete="off"
+                  placeholder="https://discord.com/channels/…/…"
+                />
+                <small>Вставь ссылку на канал. Если авто-войс работает, ссылка берётся из Discord.</small>
+              </label>
+
+              <div class="grid two">
+                <label class="switch">
+                  <input id="showJoinButton" data-field="voice.showJoinButton" type="checkbox" />
+                  <span>Кнопка «Войти в войс»</span>
+                </label>
+                <label class="switch">
+                  <input id="showNotInVoice" data-field="voice.showNotInVoice" type="checkbox" />
+                  <span>Показывать «не в войсе»</span>
+                </label>
+              </div>
+
+              <label class="field" id="notInVoiceField">
+                <span>Текст, когда не в войсе</span>
+                <input id="notInVoiceText" data-field="voice.notInVoiceText" autocomplete="off" />
+              </label>
+            </div>
+
+            <div class="card" id="timerCard">
+              <div class="card-head">
+                <div>
+                  <h2>Время активности</h2>
+                  <p class="muted">
+                    Показывается как <code>{time}</code> — например, «⏱ 3h 12m».
+                  </p>
+                </div>
+                <span class="badge soft" id="timerBadge">—</span>
+              </div>
+
+              <div class="timer-hero">
+                <div>
+                  <div class="timer-value" id="timerDisplay">0m</div>
+                  <div class="timer-hms" id="timerHms">00:00:00</div>
+                  <div class="timer-meta" id="timerMeta">Таймер не запущен</div>
+                </div>
+                <div class="timer-actions">
+                  <button class="btn primary" id="startTimerBtn">▶ Начать</button>
+                  <button class="btn" id="stopTimerBtn">⏹ Стоп</button>
+                  <button class="btn ghost" id="resetTimerBtn">Сброс</button>
+                </div>
+              </div>
+              <div class="muted" id="lastSession">Последняя сессия: —</div>
+
+              <div class="divider"></div>
+
+              <div class="grid three">
+                <label class="switch">
+                  <input id="autoStartTimer" data-field="stream.autoStart" type="checkbox" />
+                  <span>Авто-старт при входе</span>
+                </label>
+                <label class="switch">
+                  <input id="autoStopTimer" data-field="stream.autoStop" type="checkbox" />
+                  <span>Авто-стоп при выходе</span>
+                </label>
+                <label class="switch">
+                  <input id="nativeTimer" data-field="stream.showNativeTimer" type="checkbox" />
+                  <span>Таймер Discord</span>
+                </label>
+              </div>
+              <small class="muted">
+                «Таймер Discord» добавляет вторую строку HH:MM:SS. Для формата Xh Ym он не нужен.
+              </small>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="presets" hidden>
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2>Пресеты</h2>
+                  <p class="muted">
+                    Список для трея и быстрого выбора. У каждого пресета может быть своя GIF.
+                    Пустое название не сохраняется.
+                  </p>
+                </div>
+                <button class="btn primary" id="addPresetBtn" type="button">+ Добавить</button>
+              </div>
+
+              <div class="preset-editor-head">
+                <span>Название</span>
+                <span>Категория</span>
+                <span>GIF URL</span>
+                <span></span>
+              </div>
+              <div id="presetList" class="preset-list"></div>
+
+              <div class="inline-actions">
+                <button class="btn" id="presetTabApplyBtn">Применить выбранный</button>
+                <span class="muted" id="presetHint">Изменения сохранятся кнопкой «Сохранить» внизу.</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="advanced" hidden>
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2>Шаблоны presence</h2>
+                  <p class="muted">
+                    Две строки Discord: details и state. Плейсхолдеры подставляются автоматически.
+                  </p>
+                </div>
+              </div>
+
+              <div class="grid two">
+                <label class="field">
+                  <span>Details</span>
+                  <input id="tplDetails" data-field="presence.details" autocomplete="off" />
+                  <small>{P} · {activity} · {time}</small>
+                </label>
+                <label class="field">
+                  <span>State</span>
+                  <input id="tplState" data-field="presence.state" autocomplete="off" />
+                  <small>{place} · {server} · {voice} · {time}</small>
+                </label>
+                <label class="field">
+                  <span>Large image text</span>
+                  <input id="tplLargeText" data-field="presence.largeText" autocomplete="off" />
+                  <small>Показывается при наведении на большую иконку.</small>
+                </label>
+                <label class="field">
+                  <span>Small image text</span>
+                  <input id="tplSmallText" data-field="presence.smallText" autocomplete="off" />
+                  <small>Показывается при наведении на маленькую иконку.</small>
+                </label>
+              </div>
+
+              <div class="placeholder-help">
+                <code>{P}</code> площадка · <code>{activity}</code> название · <code>{server}</code> сервер ·
+                <code>{voice}</code> канал · <code>{place}</code> сервер / канал ·
+                <code>{time}</code> «⏱ 3h 12m» · <code>{elapsed}</code> «3h 12m»
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2>Вид активности</h2>
+                  <p class="muted">Тип строки Discord и запасные иконки.</p>
+                </div>
+              </div>
+
+              <div class="grid two">
+                <label class="field">
+                  <span>Тип</span>
+                  <select id="activityType" data-field="presence.activityType">
+                    <option value="auto">Авто (аниме → Смотрит, игры → Играет)</option>
+                    <option value="watching">Смотрит</option>
+                    <option value="playing">Играет</option>
+                    <option value="listening">Слушает</option>
+                    <option value="competing">Соревнуется</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Запасное название</span>
+                  <input id="fallbackActivity" data-field="presence.fallbackActivity" autocomplete="off" />
+                  <small>Если название активности пустое.</small>
+                </label>
+                <label class="field">
+                  <span>Large image key (asset)</span>
+                  <input id="largeImageKey" data-field="presence.largeImageKey" autocomplete="off" placeholder="aruku" />
+                  <small>Если GIF URL пуст. Загрузи asset в Developer Portal → Rich Presence.</small>
+                </label>
+                <label class="field">
+                  <span>Small image key (asset)</span>
+                  <input id="smallImageKey" data-field="presence.smallImageKey" autocomplete="off" placeholder="twitch" />
+                  <small>Например, иконка площадки. URL маленькой картинки Discord почти не поддерживает.</small>
+                </label>
+                <label class="field">
+                  <span>Имя приложения в превью</span>
+                  <input id="displayName" data-field="app.displayName" autocomplete="off" />
+                  <small>Настоящее имя берётся из Discord Developer Portal.</small>
+                </label>
+                <label class="switch">
+                  <input id="showButtons" data-field="presence.showButtons" type="checkbox" />
+                  <span>Показывать кнопки</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2>Приложение</h2>
+                  <p class="muted">Поведение tray-приложения.</p>
+                </div>
+              </div>
+              <div class="grid two">
+                <label class="switch">
+                  <input id="launchAtLogin" data-field="app.launchAtLogin" type="checkbox" />
+                  <span>Запускать при входе в Windows</span>
+                </label>
+                <label class="switch">
+                  <input id="minimizeToTray" data-field="app.minimizeToTray" type="checkbox" />
+                  <span>Сворачивать в трей при закрытии</span>
+                </label>
+                <label class="switch">
+                  <input id="animateTray" data-field="app.animateTray" type="checkbox" />
+                  <span>Анимировать иконку в трее</span>
+                </label>
+                <label class="switch">
+                  <input id="showSettingsOnStart" data-field="app.showSettingsOnStart" type="checkbox" />
+                  <span>Открывать настройки при запуске</span>
+                </label>
+                <label class="switch">
+                  <input id="botInvisible" data-field="discord.botInvisible" type="checkbox" />
+                  <span>Бот невидимый в Discord</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2>Диагностика</h2>
+                  <p class="muted">Логи не содержат токен — он вырезается перед записью.</p>
+                </div>
+                <div class="inline-actions compact">
+                  <button class="btn tiny" id="openConfigFolderBtn">Папка настроек</button>
+                  <button class="btn tiny" id="showLogsBtn">Файл лога</button>
+                  <button class="btn tiny ghost" id="clearLogsBtn">Очистить</button>
+                </div>
+              </div>
+              <pre class="logs" id="logsFull"></pre>
+              <div class="paths" id="pathsInfo"></div>
+            </div>
+
+            <div class="card danger-card">
+              <div class="card-head">
+                <div>
+                  <h2>Сброс</h2>
+                  <p class="muted">Удаляет токены, ID и пресеты. Используй, если что-то сломалось.</p>
+                </div>
+                <button class="btn danger" id="resetConfigBtn">Сбросить всё</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="help" hidden>
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2>Настройка за 5 минут</h2>
+                  <p class="muted">
+                    Одно Discord-приложение = RPC + бот. Если бот не нужен, оставь токен пустым
+                    и заполни войс вручную.
+                  </p>
+                </div>
+                <button class="btn primary" id="helpPortalBtn">Открыть Developer Portal</button>
+              </div>
+
+              <ol class="steps">
+                <li>
+                  <strong>Создай приложение.</strong>
+                  <span>
+                    Developer Portal → New Application. Назови его <code>aruku</code> или как
+                    хочешь видеть в статусе. Скопируй <b>Application ID</b>.
+                  </span>
+                </li>
+                <li>
+                  <strong>Добавь бота.</strong>
+                  <span>
+                    В приложении → Bot → Add Bot → Reset Token → скопируй токен. Вставь его в
+                    поле «Токен бота».
+                  </span>
+                </li>
+                <li>
+                  <strong>Пригласи бота на aruku.</strong>
+                  <span>
+                    Кнопка «Пригласить бота» ниже. Нужно право «Просматривать каналы».
+                    Без бота авто-войс работать не будет.
+                  </span>
+                </li>
+                <li>
+                  <strong>Включи режим разработчика в Discord.</strong>
+                  <span>
+                    Настройки → Расширенные → Режим разработчика. Потом правый клик по серверу →
+                    «Копировать ID сервера», по себе → «Копировать ID пользователя».
+                  </span>
+                </li>
+                <li>
+                  <strong>Выбери GIF.</strong>
+                  <span>
+                    Нужен прямой https-URL на GIF. Загрузи файл кнопкой на catbox.moe или
+                    размести на своём хостинге. Discord анимирует внешние GIF.
+                  </span>
+                </li>
+                <li>
+                  <strong>Нажми «Сохранить».</strong>
+                  <span>
+                    RPC подключится к запущенному Discord. Кнопки в своём профиле не видны —
+                    это нормально, другие их увидят.
+                  </span>
+                </li>
+              </ol>
+
+              <div class="inline-actions">
+                <button class="btn" id="helpInviteBtn">Пригласить бота</button>
+                <button class="btn ghost" id="helpCopyInviteBtn">Скопировать ссылку</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2>Плейсхолдеры</h2>
+                  <p class="muted">Используй их в шаблонах на вкладке «Дополнительно».</p>
+                </div>
+              </div>
+              <div class="table-like">
+                <div><code>{P}</code><span>Название площадки: Twitch, YouTube, Kick…</span></div>
+                <div><code>{activity}</code><span>Что показываешь: Frieren, Minecraft…</span></div>
+                <div><code>{server}</code><span>Сервер: aruku или имя из авто-детекта</span></div>
+                <div><code>{voice}</code><span>Канал: General, Аниме-войс…</span></div>
+                <div><code>{place}</code><span>Готовая строка «aruku / General»</span></div>
+                <div><code>{time}</code><span>«⏱ 3h 12m» или пусто, если таймер стоит</span></div>
+                <div><code>{elapsed}</code><span>«3h 12m» без иконки</span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2>Ограничения Discord</h2>
+                </div>
+              </div>
+              <ul class="notes">
+                <li>Кнопки RPC не видны автору статуса — только другим пользователям.</li>
+                <li>Загруженные в Developer Portal ассеты статичны; анимация — только через внешний URL.</li>
+                <li>Discord кеширует внешние картинки. Если GIF не обновился — смени URL или добавь <code>?v=2</code>.</li>
+                <li>Чтобы читать твой войс, бот должен быть на сервере и видеть канал. User-token/self-bot не используется.</li>
+                <li>Ссылка на войс открывает канал в Discord, но не входит в него автоматически.</li>
+                <li>Статус виден, только если в Discord включён показ активности.</li>
+              </ul>
+            </div>
+          </section>
+        </main>
+
+        <aside class="side">
+          <div class="preview-card">
+            <div class="preview-head">
+              <span>Так увидят другие</span>
+              <span class="live-badge" id="previewBadge">LIVE</span>
+            </div>
+
+            <div class="discord-activity">
+              <div class="discord-app-row">
+                <img class="discord-app-icon" src="../../assets/icon.png" alt="" />
+                <div>
+                  <div class="discord-app-name" id="previewAppName">aruku</div>
+                  <div class="discord-app-type" id="previewType">Смотрит</div>
+                </div>
+              </div>
+
+              <div class="discord-body">
+                <div class="discord-image-wrap">
+                  <img class="discord-image" id="previewImage" alt="" hidden />
+                  <div class="discord-image-placeholder" id="previewImagePlaceholder">
+                    <span>GIF</span>
+                  </div>
+                  <span class="gif-badge" id="previewGifBadge" hidden>GIF</span>
+                </div>
+                <div class="discord-texts">
+                  <div class="discord-details" id="previewDetails">Twitch • Chill</div>
+                  <div class="discord-state" id="previewState">aruku / Voice • ⏱ 0m</div>
+                  <div class="discord-elapsed" id="previewNativeTimer" hidden>00:00:00 прошло</div>
+                </div>
+              </div>
+
+              <div class="discord-buttons" id="previewButtons"></div>
+              <div class="discord-footer">
+                <span id="previewSmallText">Twitch • ⏱ 0m</span>
+                <span id="previewSource"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card status-card">
+            <div class="card-head">
+              <div>
+                <h2>Состояние</h2>
+                <p class="muted" id="statusUpdated">—</p>
+              </div>
+            </div>
+            <div class="status-rows">
+              <div class="status-row">
+                <span class="dot" id="rpcDot"></span>
+                <div>
+                  <div class="status-title">Discord RPC</div>
+                  <div class="status-sub" id="rpcStatusText">—</div>
+                </div>
+              </div>
+              <div class="status-row">
+                <span class="dot" id="botDot"></span>
+                <div>
+                  <div class="status-title">Бот / авто-войс</div>
+                  <div class="status-sub" id="botStatusText">—</div>
+                </div>
+              </div>
+              <div class="status-row">
+                <span class="dot violet" id="voiceDot"></span>
+                <div>
+                  <div class="status-title">Войс</div>
+                  <div class="status-sub" id="voiceStatusText">—</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="validationBox" class="notice-list"></div>
+
+            <div class="mini-log-head">
+              <span>Последние события</span>
+              <button class="link-btn" id="openAdvancedFromLogs">все</button>
+            </div>
+            <pre class="logs mini" id="logsPreview"></pre>
+          </div>
+
+          <div class="card tips-card">
+            <div class="card-head">
+              <div>
+                <h2>Быстро</h2>
+              </div>
+            </div>
+            <p class="muted small">
+              Правый клик по иконке в трее — выбор пресета, площадки и таймера.
+              Двойной клик — это окно.
+            </p>
+            <button class="btn" id="hideToTrayBtn">Свернуть в трей</button>
+          </div>
+        </aside>
+      </div>
+
+      <footer class="actionbar">
+        <div class="save-state" id="saveState">Всё сохранено</div>
+        <div class="actionbar-buttons">
+          <button class="btn ghost" id="quitBtn">Выход</button>
+          <button class="btn" id="applyAllBtn">Применить</button>
+          <button class="btn primary" id="saveBtn">Сохранить</button>
+          <button class="btn" id="trayBtn">В трей</button>
+        </div>
+      </footer>
+    </div>
+
+    <div class="toast" id="toast" hidden></div>
+    <script src="renderer.js"></script>
+  </body>
+</html>
